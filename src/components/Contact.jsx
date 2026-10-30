@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { contact } from '../data.js'
+import Icon from './Icon.jsx'
 
 export default function Contact({ t }) {
   const [copied, setCopied] = useState(false)
@@ -12,13 +13,18 @@ export default function Contact({ t }) {
   }
   return (
     <div className="contact">
-      <p>{t.contact.text}</p>
-      <a className="email mono" href={`mailto:${contact.email}`}>{contact.email}</a>
-      <div className="hero-actions center">
-        <a href={`mailto:${contact.email}`} className="btn primary">Email</a>
-        <a href={contact.cv} download className="btn">{t.hero.cv} ↓</a>
-        <button className="btn" onClick={copy}>{copied ? t.contact.copied : t.contact.copy}</button>
-        <a href={contact.linkedin} target="_blank" rel="noopener" className="btn">LinkedIn</a>
+      <p className="contact-text">{t.contact.text}</p>
+      <div className="email-row">
+        <a className="email" href={`mailto:${contact.email}`}>{contact.email}</a>
+        <button className={copied ? 'icon-btn copied' : 'icon-btn'} onClick={copy} aria-label={t.contact.copy} title={t.contact.copy}>
+          <Icon name={copied ? 'check' : 'copy'} />
+        </button>
+        <span className="copy-status mono small" role="status">{copied ? t.contact.copied : ''}</span>
+      </div>
+      <div className="hero-actions">
+        <a href={`mailto:${contact.email}`} className="btn primary"><Icon name="mail" size={16} /> Email</a>
+        <a href={contact.cv} download className="btn">{t.hero.cv} <Icon name="download" size={16} /></a>
+        <a href={contact.linkedin} target="_blank" rel="noopener" className="btn"><Icon name="linkedin" size={16} /> LinkedIn</a>
       </div>
     </div>
   )

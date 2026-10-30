@@ -4,8 +4,11 @@ export default function Section({ id, title, index, children }) {
   const ref = useReveal()
   return (
     <section id={id} ref={ref} className="section reveal">
-      <h2 className="section-title"><span className="mono">0{index}.</span> {title}</h2>
-      {children}
+      <header className="section-head">
+        <span className="section-index mono">0{index}</span>
+        <h2 className="section-title">{title}</h2>
+      </header>
+      <div className="section-body">{children}</div>
     </section>
   )
 }

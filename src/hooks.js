@@ -65,6 +65,34 @@ export function useTypewriter(words, speed = 70, pause = 1600) {
   return text
 }
 
+// Hora actual (HH:MM) en una zona horaria, refrescada cada 15 s
+export function useClock(timeZone, lang) {
+  const read = () => new Date().toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit', timeZone })
+  const [time, setTime] = useState(read)
+  useEffect(() => {
+    setTime(read())
+    const id = setInterval(() => setTime(read()), 15000)
+    return () => clearInterval(id)
+  }, [timeZone, lang])
+  return time
+}
+
+// Cuánto se ha bajado en la página, de 0 a 1
+export function useScrollProgress() {
+  const [progress, setProgress] = useState(0)
+  useEffect(() => {
+    const on = () => {
+      const max = document.documentElement.scrollHeight - innerHeight
+      setProgress(max > 0 ? Math.min(1, scrollY / max) : 0)
+    }
+    on()
+    addEventListener('scroll', on, { passive: true })
+    addEventListener('resize', on)
+    return () => { removeEventListener('scroll', on); removeEventListener('resize', on) }
+  }, [])
+  return progress
+}
+
 // Datos públicos de un repo de GitHub; null si falla (sin conexión, límite de la API...)
 export function useRepo(user, repo) {
   const [data, setData] = useState(null)

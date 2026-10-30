@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { contact } from '../data.js'
+import { useScrollProgress } from '../hooks.js'
+import Icon from './Icon.jsx'
 
 // Visor de capturas a pantalla completa; <dialog> ya gestiona Esc y el foco
 function Lightbox({ images, index, setIndex, t, lang }) {
@@ -26,33 +28,81 @@ function Lightbox({ images, index, setIndex, t, lang }) {
         </figure>
       )}
       <button className="lb-btn lb-close" onClick={() => setIndex(null)} aria-label={t.projects.close}>✕</button>
-      <button className="lb-btn lb-prev" onClick={() => go(-1)} aria-label={t.projects.prev}>‹</button>
-      <button className="lb-btn lb-next" onClick={() => go(1)} aria-label={t.projects.next}>›</button>
+      <button className="lb-btn lb-prev" onClick={() => go(-1)} aria-label={t.projects.prev}><Icon name="back" size={20} /></button>
+      <button className="lb-btn lb-next" onClick={() => go(1)} aria-label={t.projects.next}><Icon name="arrow" size={20} /></button>
     </dialog>
+  )
+}
+
+// Índice lateral: lee los títulos de las secciones ya pintadas y resalta la que se está leyendo
+function useToc(root, deps) {
+  const [items, setItems] = useState([])
+  const [current, setCurrent] = useState(null)
+  useEffect(() => {
+    const sections = [...root.current.querySelectorAll('.pp-section')]
+    sections.forEach((s, i) => { s.id = `s${i}` })
+    setItems(sections.map((s, i) => ({ id: `s${i}`, label: s.querySelector('h2').childNodes[0].textContent.trim() })))
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => e.isIntersecting && setCurrent(e.target.id))
+    }, { rootMargin: '-25% 0px -65% 0px' })
+    sections.forEach(s => io.observe(s))
+    return () => io.disconnect()
+  }, deps)
+  return [items, current]
+}
+
+function CopyButton({ text, t }) {
+  const [done, setDone] = useState(false)
+  const copy = () => navigator.clipboard?.writeText(text).then(() => { setDone(true); setTimeout(() => setDone(false), 1800) }, () => {})
+  return (
+    <button className={done ? 'copy-code mono done' : 'copy-code mono'} onClick={copy}>
+      <Icon name={done ? 'check' : 'copy'} size={14} /> {done ? t.projects.copiedCode : t.projects.copyCode}
+    </button>
   )
 }
 
 export default function ProjectPage({ p, t, lang }) {
   const [index, setIndex] = useState(null)
+  const root = useRef(null)
   const d = p.detail
   const c = d[lang]
+  const progress = useScrollProgress()
+  const [toc, current] = useToc(root, [p, lang])
   useEffect(() => { window.scrollTo(0, 0) }, [p])
   return (
-    <article className="project-page">
-      <a href="#projects" className="back">← {t.projects.back}</a>
+    <div className="pp-layout">
+    <div className="read-progress" style={{ transform: `scaleX(${progress})` }} aria-hidden="true" />
+    <nav className="toc" aria-label={t.projects.toc}>
+      <p className="sub">{t.projects.toc}</p>
+      <ol>
+        {toc.map(s => (
+          <li key={s.id}>
+            <button className={current === s.id ? 'on' : ''} onClick={() => document.getElementById(s.id).scrollIntoView({ behavior: 'smooth' })}>{s.label}</button>
+          </li>
+        ))}
+      </ol>
+    </nav>
+    <article className="project-page" ref={root}>
+      <a href="#projects" className="back link-arrow"><Icon name="back" size={16} /> {t.projects.back}</a>
       <header className="pp-head">
-        <span className="badge">{p.tag}</span>
+        <p className="pp-meta mono small"><span className="badge">{p.tag}</span><span className="muted">{d.period[lang]}</span></p>
         <h1>{p.name}</h1>
-        <p className="mono small accent">{d.period[lang]}</p>
-        {d.role && <p className="role-line">👤 {d.role[lang]}</p>}
+        {d.role && <p className="role-line"><Icon name="user" size={16} /> {d.role[lang]}</p>}
         <p className="lead">{c.summary}</p>
         <ul className="chips">{p.stack.map(s => <li key={s}>{s}</li>)}</ul>
-        <a href={`${contact.github}/${p.repo}`} target="_blank" rel="noopener" className="btn primary">{t.projects.code} →</a>
+        <a href={`${contact.github}/${p.repo}`} target="_blank" rel="noopener" className="btn primary"><Icon name="github" size={16} /> {t.projects.code} <Icon name="external" size={16} /></a>
       </header>
 
-      <button className="hero-shot" onClick={() => setIndex(0)} aria-label={d.images[0].alt[lang]}>
-        <img src={d.images[0].src} alt={d.images[0].alt[lang]} />
-      </button>
+      {d.images.length > 0 ? (
+        <button className="hero-shot" onClick={() => setIndex(0)} aria-label={d.images[0].alt[lang]}>
+          <img src={d.images[0].src} alt={d.images[0].alt[lang]} />
+        </button>
+      ) : d.logo && (
+        // sin capturas: portada con el logo de la app
+        <div className="logo-shot">
+          <img src={d.logo} alt={p.name} />
+        </div>
+      )}
 
       <div className="stats facts">
         {d.facts.map(f => <div key={f.value} className="card stat"><strong>{f.value}</strong><span>{f.label[lang]}</span></div>)}
@@ -60,7 +110,7 @@ export default function ProjectPage({ p, t, lang }) {
 
       {d.context && (
         <aside className="callout">
-          <span className="callout-icon" aria-hidden="true">🏫</span>
+          <span className="callout-icon"><Icon name={d.contextIcon ?? 'school'} size={22} /></span>
           <div>
             <h2>{d.context[lang][0]}</h2>
             <p>{d.context[lang][1]}</p>
@@ -80,7 +130,7 @@ export default function ProjectPage({ p, t, lang }) {
 
       {d.flow && (
         <section className="pp-section">
-          <h2 className="sub">{t.projects.flow}</h2>
+          <h2 className="sub">{d.flowTitle?.[lang] ?? t.projects.flow}</h2>
           {d.flowIntro && <p className="muted">{d.flowIntro[lang]}</p>}
           <ol className="flow">
             {d.flow.map((st, i) => {
@@ -119,17 +169,19 @@ export default function ProjectPage({ p, t, lang }) {
         </section>
       )}
 
-      <section className="pp-section">
-        <h2 className="sub">{t.projects.gallery}</h2>
-        <div className="gallery">
-          {d.images.map((img, i) => (
-            <button key={img.src} className={img.mobile ? 'thumb mobile' : 'thumb'} onClick={() => setIndex(i)}>
-              <img src={img.src} alt={img.alt[lang]} loading="lazy" />
-              <span>{img.alt[lang]}</span>
-            </button>
-          ))}
-        </div>
-      </section>
+      {d.images.length > 0 && (
+        <section className="pp-section">
+          <h2 className="sub">{t.projects.gallery}</h2>
+          <div className="gallery">
+            {d.images.map((img, i) => (
+              <button key={img.src} className={img.mobile ? 'thumb mobile' : 'thumb'} onClick={() => setIndex(i)}>
+                <img src={img.src} alt={img.alt[lang]} loading="lazy" />
+                <span>{img.alt[lang]}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="pp-section">
         <h2 className="sub">{t.projects.architecture}</h2>
@@ -172,7 +224,7 @@ export default function ProjectPage({ p, t, lang }) {
           <h2 className="sub">{t.projects.codeTitle}</h2>
           <p>{c.codeText}</p>
           <figure className="code">
-            <figcaption className="mono small muted">{d.code.file}</figcaption>
+            <figcaption className="mono small muted"><span>{d.code.file}</span><CopyButton text={d.code.snippet} t={t} /></figcaption>
             <pre><code>{d.code.snippet}</code></pre>
           </figure>
         </section>
@@ -187,12 +239,13 @@ export default function ProjectPage({ p, t, lang }) {
 
       {c.next && (
         <section className="pp-section">
-          <h2 className="sub">{t.projects.next}</h2>
+          <h2 className="sub">{t.projects.nextSteps}</h2>
           <ul className="features">{c.next.map(f => <li key={f}>{f}</li>)}</ul>
         </section>
       )}
 
-      <Lightbox images={d.images} index={index} setIndex={setIndex} t={t} lang={lang} />
+      {d.images.length > 0 && <Lightbox images={d.images} index={index} setIndex={setIndex} t={t} lang={lang} />}
     </article>
+    </div>
   )
 }

@@ -18,6 +18,307 @@ export const projects = [
       es: 'Aplicación Android para la gestión de comandas, conectada a una API REST propia en PHP con base de datos SQL.',
       en: 'Android app for managing orders, connected to a custom PHP REST API backed by a SQL database.',
     },
+    // Página de detalle: /#/proyecto/plan_x_bar (sin capturas: el servidor de la API ya no existe)
+    detail: {
+      logo: './proyectos/planbar/logo.png',
+      period: { es: 'Abr 2026 – May 2026 · Trabajo de Fin de Grado', en: 'Apr 2026 – May 2026 · Final-year project' },
+      contextIcon: 'server',
+      context: {
+        es: ['Sin capturas: el servidor ya no existe', 'La app dependía de una API y una base de datos alojadas en un hosting gratuito que ya he cerrado. Sin ese servidor la app no puede arrancar, así que, a diferencia de otros proyectos, no hay capturas. El código completo, con la API en PHP y el esquema de la base de datos, sigue disponible en GitHub.'],
+        en: ['No screenshots: the server is gone', 'The app relied on an API and a database hosted on a free hosting service that I have since shut down. Without that server the app cannot start, so unlike other projects there are no screenshots. The full code, including the PHP API and the database schema, is still available on GitHub.'],
+      },
+      role: { es: 'Proyecto en equipo: app Android en Kotlin, API REST en PHP y base de datos MySQL', en: 'Team project: Kotlin Android app, PHP REST API and MySQL database' },
+      layers: [
+        { name: 'App Android', note: 'Kotlin · Jetpack Compose · Material 3 · MVVM', side: ['DataStore', 'Navigation Compose'] },
+        { name: 'Retrofit', note: 'OkHttp · Gson · JSON' },
+        { name: 'API REST en PHP', note: 'PDO · consultas preparadas · bcrypt' },
+        { name: 'MySQL 8', note: '12 tablas · claves foráneas' },
+      ],
+      // Las 12 tablas del esquema, con sus columnas principales (claves foráneas con →)
+      tables: [
+        { name: 'Restaurante', fields: ['id · PK', 'nombre', 'email · UQ', 'direccion', 'telefono'] },
+        { name: 'Trabajadores', fields: ['id · PK', 'restaurante_id → Restaurante', 'nombre', 'rol', 'email · UQ', 'pin', 'password_hash', 'activo'] },
+        { name: 'Zonas', fields: ['id · PK', 'restaurante_id → Restaurante', 'clave', 'nombre', 'orden', 'activo'] },
+        { name: 'Mesas', fields: ['id · PK', 'restaurante_id → Restaurante', 'zona_id → Zonas', 'codigo', 'capacidad', 'estado', 'posX · posY', 'ancho · alto', 'rotacion'] },
+        { name: 'Estructuras', fields: ['id · PK', 'restaurante_id → Restaurante', 'zona_id → Zonas', 'nombre', 'posX · posY', 'ancho · alto', 'color', 'rotacion'] },
+        { name: 'Productos', fields: ['id · PK', 'restaurante_id → Restaurante', 'nombre', 'categoria', 'descripcion', 'precio', 'disponible'] },
+        { name: 'Pedidos', fields: ['id · PK', 'mesa_id → Mesas', 'reserva_id → Reservas', 'trabajador_id → Trabajadores', 'comensales', 'estado', 'subtotal · total', 'descuento · cortesia', 'metodo_pago'] },
+        { name: 'PedidoProductos', fields: ['id · PK', 'pedido_id → Pedidos', 'producto_id → Productos', 'cantidad', 'precio_unitario', 'observaciones', 'estado'] },
+        { name: 'Reservas', fields: ['id · PK', 'codigo · UQ', 'restaurante_id → Restaurante', 'nombre', 'telefono', 'num_personas', 'fecha · hora', 'estado', 'notas'] },
+        { name: 'ReservaMesas', fields: ['id · PK', 'reserva_id → Reservas', 'mesa_id → Mesas'] },
+        { name: 'MenuDia', fields: ['id · PK', 'restaurante_id', 'precio', 'activo'] },
+        { name: 'MenuDiaLineas', fields: ['id · PK', 'menu_dia_id → MenuDia', 'producto_id', 'curso', 'cantidad'] },
+      ],
+      code: {
+        file: 'backend/api/pedidos/pedidos_enviar_cocina.php',
+        snippet: `try {
+    $db = getDB();
+    $db->beginTransaction();
+
+    // Verificar que el pedido existe y no está pagado
+    $stmt = $db->prepare("SELECT estado FROM Pedidos WHERE id = ? AND estado IN ('abierto', 'en_cocina', 'listo')");
+    $stmt->execute([$pedido_id]);
+    // …
+
+    // Si estaba abierto o ya listo (nueva ronda de platos), volver a en_cocina
+    if (in_array($pedido['estado'], ['abierto', 'listo'])) {
+        $db->prepare("UPDATE Pedidos SET estado = 'en_cocina' WHERE id = ?")
+           ->execute([$pedido_id]);
+    }
+
+    // Solo enviar productos que aún no se han mandado a cocina (estado = '')
+    $stmt = $db->prepare("UPDATE PedidoProductos SET estado = 'en preparacion' WHERE pedido_id = ? AND estado = ''");
+    $stmt->execute([$pedido_id]);
+    // …
+    $db->commit();
+} catch (Exception $e) {
+    $db->rollBack();
+}`,
+      },
+      facts: [
+        { value: '~15.000', label: { es: 'líneas de Kotlin', en: 'lines of Kotlin' } },
+        { value: '45', label: { es: 'endpoints REST', en: 'REST endpoints' } },
+        { value: '19', label: { es: 'pantallas', en: 'screens' } },
+        { value: '60', label: { es: 'tests unitarios', en: 'unit tests' } },
+      ],
+      modules: [
+        {
+          title: { es: 'Restaurante y acceso', en: 'Restaurant and access' },
+          es: [
+            'Registro del restaurante con su cuenta de administrador',
+            'Inicio de sesión del administrador con email y contraseña',
+            'Selector de perfil del equipo: cada trabajador entra con su PIN',
+            'La primera vez, el trabajador crea su PIN de 4 dígitos y lo confirma',
+            'Tres roles: administración, sala (camareros) y cocina',
+          ],
+          en: [
+            'Restaurant sign-up with its admin account',
+            'Admin login with email and password',
+            'Team profile picker: each worker signs in with a PIN',
+            'On first access, workers create and confirm a 4-digit PIN',
+            'Three roles: admin, floor staff (waiters) and kitchen',
+          ],
+        },
+        {
+          title: { es: 'Sala (camareros)', en: 'Floor (waiters)' },
+          es: [
+            'Mesas del local por zonas, con su estado: libre, ocupada o reservada',
+            'Abrir una mesa indicando el número de comensales',
+            'Se actualiza sola cada 5 segundos',
+          ],
+          en: [
+            'Tables grouped by area with their status: free, occupied or booked',
+            'Open a table with the number of diners',
+            'Refreshes itself every 5 seconds',
+          ],
+        },
+        {
+          title: { es: 'Comanda', en: 'Order taking' },
+          es: [
+            'Carta por categorías: bebidas, entrantes, primeros, segundos y postres',
+            'Menú del día con stock: avisa de los platos que quedan o están agotados',
+            'Observaciones por producto y cambio de cantidades',
+            'Envío a cocina solo de los productos nuevos, por rondas',
+            'Aviso si intentas salir con productos sin enviar',
+            'Marcar platos como servidos',
+            'Descuentos en porcentaje o importe fijo, e invitaciones de la casa',
+            'Cobro en efectivo, con tarjeta u otro método, y la mesa queda libre',
+          ],
+          en: [
+            'Menu by category: drinks, starters, mains, seconds and desserts',
+            'Daily set menu with stock: shows dishes left or sold out',
+            'Per-item notes and quantity changes',
+            'Only new items are sent to the kitchen, in rounds',
+            'Warning when leaving with items not yet sent',
+            'Mark dishes as served',
+            'Percentage or fixed discounts, and items on the house',
+            'Payment by cash, card or other method, freeing the table',
+          ],
+        },
+        {
+          title: { es: 'Cocina', en: 'Kitchen' },
+          es: [
+            'Pedidos en marcha con el progreso de cada uno',
+            'Estado de cada plato: pendiente, preparado o cancelado',
+            'Tiempo transcurrido desde que llegó cada pedido',
+            'Sonido al entrar un pedido nuevo, que se puede desactivar',
+            'Se actualiza sola cada 5 segundos',
+          ],
+          en: [
+            'Orders in progress with their progress',
+            'Status of every dish: pending, ready or cancelled',
+            'Time elapsed since each order arrived',
+            'Sound when a new order comes in, which can be turned off',
+            'Refreshes itself every 5 seconds',
+          ],
+        },
+        {
+          title: { es: 'Administración', en: 'Admin' },
+          es: [
+            'Mesas: alta, edición y borrado, con código y capacidad',
+            'Plano del local editable: mesas, paredes, barra, columnas y puertas que se arrastran, redimensionan y giran',
+            'Hasta 4 zonas de trabajo con nombre propio',
+            'Carta: productos con categoría, precio y disponibilidad',
+            'Equipo: trabajadores con rol, PIN y estado activo',
+            'Menú del día: un plato por curso, precio y unidades disponibles',
+          ],
+          en: [
+            'Tables: create, edit and delete, with code and capacity',
+            'Editable floor plan: tables, walls, bar, columns and doors you can drag, resize and rotate',
+            'Up to 4 named work areas',
+            'Menu: products with category, price and availability',
+            'Team: workers with role, PIN and active status',
+            'Daily set menu: one dish per course, price and units available',
+          ],
+        },
+        {
+          title: { es: 'Reservas', en: 'Bookings' },
+          es: [
+            'Reservas por día, con navegación al día anterior y siguiente',
+            'Alta manual con nombre, teléfono, personas, hora y notas',
+            'Código de reserva de 6 caracteres para identificarla al llegar',
+            'Marcar al cliente como llegado',
+          ],
+          en: [
+            'Bookings by day, with previous/next day navigation',
+            'Manual booking with name, phone, party size, time and notes',
+            '6-character booking code to identify it on arrival',
+            'Mark the guest as arrived',
+          ],
+        },
+        {
+          title: { es: 'Estadísticas', en: 'Statistics' },
+          es: [
+            'Periodo: hoy, semana o mes',
+            'Venta bruta y neta, comensales y tiempo medio por mesa',
+            'Descuentos e invitaciones aplicados',
+            'Top 3 platos, ventas por categoría y por camarero',
+          ],
+          en: [
+            'Period: today, week or month',
+            'Gross and net sales, diners and average time per table',
+            'Discounts and items on the house',
+            'Top 3 dishes, sales by category and by waiter',
+          ],
+        },
+        {
+          title: { es: 'Ajustes', en: 'Settings' },
+          es: [
+            'Tema claro u oscuro',
+            'Tres idiomas: español, inglés y francés',
+          ],
+          en: [
+            'Light or dark theme',
+            'Three languages: Spanish, English and French',
+          ],
+        },
+      ],
+      // Recorrido de una mesa, de la configuración del local al cobro (sin capturas)
+      flowTitle: { es: 'Una mesa de principio a fin', en: 'A table from start to finish' },
+      flowIntro: { es: 'Así recorría una mesa la app, desde que se configura el local hasta que se cobra.', en: 'This is how a table moved through the app, from setting up the venue to payment.' },
+      flow: [
+        {
+          actor: 'admin',
+          es: ['Configura el local', 'El administrador registra el restaurante, dibuja el plano con sus zonas y mesas, carga la carta y da de alta al equipo.'],
+          en: ['Sets up the venue', 'The admin registers the restaurant, draws the floor plan with its areas and tables, loads the menu and adds the team.'],
+        },
+        {
+          actor: 'camarero',
+          es: ['Entra con su PIN', 'En el dispositivo del restaurante, el camarero elige su perfil y entra con su PIN de 4 dígitos.'],
+          en: ['Signs in with a PIN', 'On the restaurant device, the waiter picks their profile and signs in with a 4-digit PIN.'],
+        },
+        {
+          actor: 'camarero',
+          es: ['Abre la mesa', 'Elige una mesa libre en su zona e indica cuántos comensales son. La mesa pasa a ocupada.'],
+          en: ['Opens the table', 'Picks a free table in their area and enters the number of diners. The table becomes occupied.'],
+        },
+        {
+          actor: 'camarero',
+          es: ['Toma la comanda', 'Añade productos de la carta o menús del día, con observaciones, y los envía a cocina. Más tarde puede enviar otra ronda.'],
+          en: ['Takes the order', 'Adds items from the menu or daily set menus, with notes, and sends them to the kitchen. Another round can follow later.'],
+        },
+        {
+          actor: 'cocina',
+          es: ['Cocina lo prepara', 'El pedido aparece en la pantalla de cocina con un aviso sonoro. Cocina marca cada plato como preparado.'],
+          en: ['The kitchen prepares it', 'The order shows up on the kitchen screen with a sound alert. The kitchen marks each dish as ready.'],
+        },
+        {
+          actor: 'camarero',
+          es: ['Sirve y cobra', 'El camarero marca los platos servidos, aplica descuentos si hace falta y cobra en efectivo o con tarjeta. La mesa queda libre.'],
+          en: ['Serves and charges', 'The waiter marks dishes as served, applies discounts if needed and charges by cash or card. The table is free again.'],
+        },
+        {
+          actor: 'admin',
+          es: ['Queda en las estadísticas', 'La venta cuenta en el panel del jefe: ventas, comensales, platos más pedidos y ventas por camarero.'],
+          en: ['Feeds the statistics', 'The sale counts in the manager panel: sales, diners, top dishes and sales per waiter.'],
+        },
+      ],
+      images: [],
+      es: {
+        summary: 'PlanBar es una app Android para gestionar un bar o restaurante desde el móvil o la tablet: el plano del local, las reservas, las comandas de los camareros, la pantalla de cocina y el cobro, con estadísticas para el responsable. Fue mi Trabajo de Fin de Grado, hecho en equipo.',
+        problem: 'En muchos bares las comandas aún van en papel: se pierden platos, cocina no sabe qué va primero y al final del día nadie sabe cuánto se ha vendido ni qué ha funcionado. PlanBar quiere poner todo eso en una sola app.',
+        features: [
+          'Plano del local editable, con mesas, paredes y barra que se arrastran y giran',
+          'Comandas por rondas, con observaciones y menú del día con stock',
+          'Pantalla de cocina con el estado de cada plato y aviso sonoro',
+          'Cobro con descuentos, invitaciones y varios métodos de pago',
+          'Reservas con código y asignación de mesas',
+          'Acceso del equipo con PIN y tres roles: administración, sala y cocina',
+          'Estadísticas de ventas por periodo, plato, categoría y camarero',
+          'Tema claro u oscuro y tres idiomas',
+        ],
+        architecture: 'La app está hecha en Kotlin con Jetpack Compose y Material 3, siguiendo MVVM: cada pantalla tiene su ViewModel y la navegación va con Navigation Compose. Se comunica con una API REST en PHP mediante Retrofit, y la API guarda los datos en MySQL. Los ajustes del dispositivo (tema, idioma, sonido) se guardan con DataStore.',
+        codeText: 'Enviar una ronda a cocina toca el pedido y sus productos. Va en una transacción y solo manda los productos nuevos, así una segunda ronda no vuelve a enviar los platos que ya estaban en cocina.',
+        security: [
+          'Contraseñas y PIN cifrados con bcrypt (password_hash)',
+          'Consultas SQL preparadas con PDO en toda la API',
+          'El login responde igual tanto si falla el email como la contraseña',
+          'Cada rol solo ve sus pantallas: administración, sala o cocina',
+        ],
+        next: [
+          'Reforzar la seguridad de la API con tokens de sesión y HTTPS',
+          'Avisos en tiempo real a cocina en lugar de consultar cada 5 segundos',
+          'Tests de la API y de las pantallas, además de los tests unitarios de los modelos',
+        ],
+        challenges: [
+          { title: 'Un plano a medida', text: 'Cada local es distinto: el plano permite colocar, redimensionar y girar mesas, paredes, barra y columnas, y guarda su posición en la base de datos.' },
+          { title: 'Comanda y cocina a la vez', text: 'Cada producto tiene su propio estado (en preparación, preparado, servido o cancelado) para que sala y cocina vean lo mismo sin pisarse.' },
+          { title: 'Menú del día con stock', text: 'El menú del día lleva unidades por plato: -1 es sin límite, 0 es agotado, y la comanda avisa de lo que queda.' },
+        ],
+      },
+      en: {
+        summary: 'PlanBar is an Android app to run a bar or restaurant from a phone or tablet: the floor plan, bookings, waiters’ orders, the kitchen screen and payment, with statistics for the manager. It was my final-year project, built as a team.',
+        problem: 'Many bars still take orders on paper: dishes get lost, the kitchen does not know what comes first and at the end of the day nobody knows how much was sold or what worked. PlanBar aims to bring all of that into a single app.',
+        features: [
+          'Editable floor plan with tables, walls and bar you can drag and rotate',
+          'Orders in rounds, with notes and a daily set menu with stock',
+          'Kitchen screen with the status of every dish and a sound alert',
+          'Payment with discounts, items on the house and several payment methods',
+          'Bookings with a code and table assignment',
+          'Team access with PIN and three roles: admin, floor and kitchen',
+          'Sales statistics by period, dish, category and waiter',
+          'Light or dark theme and three languages',
+        ],
+        architecture: 'The app is built in Kotlin with Jetpack Compose and Material 3, following MVVM: every screen has its ViewModel and navigation uses Navigation Compose. It talks to a PHP REST API through Retrofit, and the API stores the data in MySQL. Device settings (theme, language, sound) are kept with DataStore.',
+        codeText: 'Sending a round to the kitchen touches the order and its items. It runs in a transaction and only sends the new items, so a second round never resends dishes that were already in the kitchen.',
+        security: [
+          'Passwords and PINs hashed with bcrypt (password_hash)',
+          'Prepared SQL statements with PDO across the whole API',
+          'Login answers the same whether the email or the password is wrong',
+          'Each role only sees its own screens: admin, floor or kitchen',
+        ],
+        next: [
+          'Harden the API with session tokens and HTTPS',
+          'Real-time kitchen alerts instead of polling every 5 seconds',
+          'API and UI tests, on top of the existing model unit tests',
+        ],
+        challenges: [
+          { title: 'A custom floor plan', text: 'Every venue is different: the plan lets you place, resize and rotate tables, walls, bar and columns, and stores their position in the database.' },
+          { title: 'Floor and kitchen in sync', text: 'Every item has its own status (in preparation, ready, served or cancelled) so the floor and the kitchen see the same thing without stepping on each other.' },
+          { title: 'Daily menu with stock', text: 'The daily set menu tracks units per dish: -1 means unlimited, 0 means sold out, and order taking shows what is left.' },
+        ],
+      },
+    },
   },
   {
     repo: 'biblioteca_lanuza',
@@ -497,9 +798,9 @@ export const skills = {
 const es = {
   nav: { about: 'Sobre mí', projects: 'Proyectos', experience: 'Trayectoria', skills: 'Habilidades', contact: 'Contacto' },
   hero: {
-    hello: 'Hola, soy',
     roles: ['Desarrollador de software', 'Técnico de soporte', 'Desarrollador Android', 'Desarrollador web'],
     location: 'Zaragoza, España',
+    localTime: 'hora local',
     cta: 'Ver proyectos',
     cv: 'Descargar CV',
     contact: 'Contactar',
@@ -516,7 +817,7 @@ const es = {
     languages: [{ name: 'Castellano', level: 'Nativo' }, { name: 'Inglés', level: 'Medio-Alto' }],
     hobbies: 'Fuera del código: enduro, BJJ, MMA y cultura audiovisual.',
   },
-  projects: { title: 'Proyectos', code: 'Código', updated: 'Actualizado', more: 'Ver proyecto', back: 'Volver al portfolio', summary: 'Resumen', problem: 'El problema', features: 'Qué hace', gallery: 'Capturas', architecture: 'Arquitectura', challenges: 'Retos', dataModel: 'Modelo de datos', allFeatures: 'Todas las funcionalidades', flow: 'Un préstamo de principio a fin', actors: { alumno: 'Alumno', biblioteca: 'Biblioteca', sistema: 'Automático' }, security: 'Seguridad', codeTitle: 'Código destacado', next: 'Siguientes pasos', close: 'Cerrar', prev: 'Anterior', next: 'Siguiente' },
+  projects: { title: 'Proyectos', code: 'Código', updated: 'Actualizado', more: 'Ver proyecto', back: 'Volver al portfolio', summary: 'Resumen', problem: 'El problema', features: 'Qué hace', gallery: 'Capturas', architecture: 'Arquitectura', challenges: 'Retos', dataModel: 'Modelo de datos', allFeatures: 'Todas las funcionalidades', flow: 'Un préstamo de principio a fin', actors:{ alumno: 'Alumno', biblioteca: 'Biblioteca', sistema: 'Automático', admin: 'Administración', camarero: 'Camarero', cocina: 'Cocina' }, security: 'Seguridad', codeTitle: 'Código destacado', nextSteps: 'Siguientes pasos', close: 'Cerrar', prev: 'Anterior', next: 'Siguiente', copyCode: 'Copiar', copiedCode: 'Copiado', toc: 'En esta página' },
   experience: {
     title: 'Trayectoria',
     work: 'Experiencia',
@@ -542,14 +843,57 @@ const es = {
   },
   footer: 'Hecho con React y Vite',
   theme: 'Cambiar tema',
+  palette: {
+    open: 'Buscar',
+    placeholder: 'Busca una sección, un proyecto o una acción…',
+    empty: 'Sin resultados',
+    groups: { nav: 'Ir a', projects: 'Proyectos', actions: 'Acciones', links: 'Enlaces' },
+    theme: 'Cambiar tema claro / oscuro',
+    lang: 'Switch to English',
+    copyEmail: 'Copiar email',
+    cv: 'Descargar CV',
+    terminal: 'Abrir terminal',
+    hint: 'T tema · L idioma · Esc cerrar',
+  },
+  toast: { copied: 'Email copiado', oss: 'Oss!', theme: 'Tema cambiado', lang: 'Idioma: español' },
+  notFound: {
+    title: 'Este libro está prestado',
+    text: 'La página que buscas no está en el catálogo. Puede que el enlace esté mal escrito o que el proyecto ya no exista.',
+    fields: [['Código', 'L_404'], ['Estado', 'Prestado'], ['Devolución prevista', 'Nunca']],
+    back: 'Volver al portfolio',
+  },
+  terminal: {
+    title: 'terminal — jorge@portfolio',
+    welcome: 'Bienvenido a la terminal secreta. Escribe help para ver los comandos.',
+    help: [
+      ['help', 'muestra esta ayuda'],
+      ['whoami', 'quién soy'],
+      ['about', 'sobre mí'],
+      ['projects', 'lista de proyectos'],
+      ['open <n>', 'abre un proyecto'],
+      ['skills', 'habilidades'],
+      ['experience', 'trayectoria'],
+      ['contact', 'cómo contactarme'],
+      ['cv', 'descarga mi CV'],
+      ['theme · lang', 'cambia el tema o el idioma'],
+      ['clear · exit', 'limpia o cierra la terminal'],
+    ],
+    notFound: 'comando no encontrado:',
+    tryHelp: 'Escribe help para ver los comandos.',
+    openHint: 'Usa open 1, open 2… para abrir uno.',
+    opening: 'Abriendo',
+    downloading: 'Descargando CV…',
+    sudo: ['[sudo] contraseña para recruiter: ********', 'Permiso concedido ✓', 'Gracias por pasarte. Escríbeme y hablamos:'],
+    ls: 'sobre-mi.md  proyectos/  habilidades.json  cv.pdf  contacto.txt',
+  },
 }
 
 const en = {
   nav: { about: 'About', projects: 'Projects', experience: 'Journey', skills: 'Skills', contact: 'Contact' },
   hero: {
-    hello: "Hi, I'm",
     roles: ['Software developer', 'Support technician', 'Android developer', 'Web developer'],
     location: 'Zaragoza, Spain',
+    localTime: 'local time',
     cta: 'See projects',
     cv: 'Download CV (ES)',
     contact: 'Get in touch',
@@ -566,7 +910,7 @@ const en = {
     languages: [{ name: 'Spanish', level: 'Native' }, { name: 'English', level: 'Upper-intermediate' }],
     hobbies: 'Away from code: enduro, BJJ, MMA and film & TV.',
   },
-  projects: { title: 'Projects', code: 'Code', updated: 'Updated', more: 'View project', back: 'Back to portfolio', summary: 'Overview', problem: 'The problem', features: 'What it does', gallery: 'Screenshots', architecture: 'Architecture', challenges: 'Challenges', dataModel: 'Data model', allFeatures: 'Every feature', flow: 'A loan from start to finish', actors: { alumno: 'Student', biblioteca: 'Library', sistema: 'Automatic' }, security: 'Security', codeTitle: 'Code highlight', next: 'Next steps', close: 'Close', prev: 'Previous', next: 'Next' },
+  projects: { title: 'Projects', code: 'Code', updated: 'Updated', more: 'View project', back: 'Back to portfolio', summary: 'Overview', problem: 'The problem', features: 'What it does', gallery: 'Screenshots', architecture: 'Architecture', challenges: 'Challenges', dataModel: 'Data model', allFeatures: 'Every feature', flow: 'A loan from start to finish', actors:{ alumno: 'Student', biblioteca: 'Library', sistema: 'Automatic', admin: 'Admin', camarero: 'Waiter', cocina: 'Kitchen' }, security: 'Security', codeTitle: 'Code highlight', nextSteps: 'Next steps', close: 'Close', prev: 'Previous', next: 'Next', copyCode: 'Copy', copiedCode: 'Copied', toc: 'On this page' },
   experience: {
     title: 'Journey',
     work: 'Experience',
@@ -592,6 +936,49 @@ const en = {
   },
   footer: 'Built with React and Vite',
   theme: 'Toggle theme',
+  palette: {
+    open: 'Search',
+    placeholder: 'Search a section, a project or an action…',
+    empty: 'No results',
+    groups: { nav: 'Go to', projects: 'Projects', actions: 'Actions', links: 'Links' },
+    theme: 'Toggle light / dark theme',
+    lang: 'Cambiar a español',
+    copyEmail: 'Copy email',
+    cv: 'Download CV',
+    terminal: 'Open terminal',
+    hint: 'T theme · L language · Esc close',
+  },
+  toast: { copied: 'Email copied', oss: 'Oss!', theme: 'Theme changed', lang: 'Language: English' },
+  notFound: {
+    title: 'This book is on loan',
+    text: 'The page you are looking for is not in the catalogue. The link may be misspelled or the project may no longer exist.',
+    fields: [['Code', 'L_404'], ['Status', 'On loan'], ['Due back', 'Never']],
+    back: 'Back to portfolio',
+  },
+  terminal: {
+    title: 'terminal — jorge@portfolio',
+    welcome: 'Welcome to the secret terminal. Type help to see the commands.',
+    help: [
+      ['help', 'show this help'],
+      ['whoami', 'who I am'],
+      ['about', 'about me'],
+      ['projects', 'list of projects'],
+      ['open <n>', 'open a project'],
+      ['skills', 'skills'],
+      ['experience', 'journey'],
+      ['contact', 'how to reach me'],
+      ['cv', 'download my CV'],
+      ['theme · lang', 'toggle theme or language'],
+      ['clear · exit', 'clear or close the terminal'],
+    ],
+    notFound: 'command not found:',
+    tryHelp: 'Type help to see the commands.',
+    openHint: 'Use open 1, open 2… to open one.',
+    opening: 'Opening',
+    downloading: 'Downloading CV…',
+    sudo: ['[sudo] password for recruiter: ********', 'Permission granted ✓', 'Thanks for stopping by. Drop me a line:'],
+    ls: 'about-me.md  projects/  skills.json  cv.pdf  contact.txt',
+  },
 }
 
 export const texts = { es, en }
