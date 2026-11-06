@@ -3,6 +3,7 @@
 export const contact = {
   email: 'jorgelnprz@gmail.com',
   linkedin: 'https://www.linkedin.com/in/jorgelei',
+  instagram: 'https://www.instagram.com/jorgeee.lp/',
   github: 'https://github.com/jorgeelp',
   githubUser: 'jorgeelp',
   cv: './CV_Jorge_Lei_Leon.pdf',
@@ -826,7 +827,7 @@ const es = {
     jobs: [
       { role: 'Técnico de soporte', org: 'Cadwork Ibérica y Latinoamérica', date: 'Sep 2026 – Actualidad', points: [] },
       { role: 'Desarrollador de Software en Prácticas', org: 'Colegio Juan de Lanuza', date: 'Mar 2026 – May 2026', points: ['Desarrollo de una aplicación web de gestión bibliotecaria con React.js y Node.js'] },
-      { role: 'Mozo de almacén', org: 'Frutas Sanagustín Visiedo Hijo S.L.', date: 'Jul 2025 – Ago 2025', points: [] },
+      { role: 'Mozo de almacén', org: 'Frutas Sanagustín Visiedo Hijo S.L.', date: 'Jul 2025 – Ago 2025', points: ['Carga y descarga de camiones y palés de fruta', 'Control visual de calidad, retirando la fruta dañada', 'Orden y almacenamiento de producto en cámaras frigoríficas', 'Recuento de existencias e inventario', 'Limpieza y orden del almacén y la zona de trabajo'] },
       { role: 'Técnico Informático', org: 'Escuela Profesional Salesiana', date: 'Jul 2023 – Jun 2025', points: ['Mantenimiento y reparación de equipos informáticos', 'Soporte técnico presencial a usuarios internos', 'Diagnóstico y resolución de averías de hardware y software', 'Gestión de incidencias y seguimiento de tickets'] },
     ],
     studies: [
@@ -919,7 +920,7 @@ const en = {
     jobs: [
       { role: 'Support Technician', org: 'Cadwork Ibérica y Latinoamérica', date: 'Sep 2026 – Present', points: [] },
       { role: 'Software Developer Intern', org: 'Colegio Juan de Lanuza', date: 'Mar 2026 – May 2026', points: ['Built a library management web app with React.js and Node.js'] },
-      { role: 'Warehouse Operative', org: 'Frutas Sanagustín Visiedo Hijo S.L.', date: 'Jul 2025 – Aug 2025', points: [] },
+      { role: 'Warehouse Operative', org: 'Frutas Sanagustín Visiedo Hijo S.L.', date: 'Jul 2025 – Aug 2025', points: ['Loading and unloading fruit trucks and pallets', 'Visual quality control, removing damaged fruit', 'Storing and organising stock in cold rooms', 'Stock counts and inventory', 'Keeping the warehouse and work area clean and tidy'] },
       { role: 'IT Technician', org: 'Escuela Profesional Salesiana', date: 'Jul 2023 – Jun 2025', points: ['Computer maintenance and repair', 'On-site technical support for internal users', 'Hardware and software troubleshooting', 'Incident management and ticket tracking'] },
     ],
     studies: [

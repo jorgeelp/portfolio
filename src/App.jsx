@@ -11,6 +11,7 @@ import ProjectPage from './components/ProjectPage.jsx'
 import NotFound from './components/NotFound.jsx'
 import CommandPalette from './components/CommandPalette.jsx'
 import Terminal from './components/Terminal.jsx'
+import CursorSpot from './components/CursorSpot.jsx'
 
 const ids = ['about', 'projects', 'experience', 'skills', 'contact']
 const systemTheme = () => (window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
@@ -70,24 +71,28 @@ export default function App() {
 
   return (
     <>
+      <CursorSpot />
       <Header t={t} ids={ids} active={project || notFound ? null : active} lang={lang} setLang={setLang} theme={theme} setTheme={setTheme} onPalette={() => setPalette(true)} />
       <main>
         {project ? <ProjectPage p={project} t={t} lang={lang} /> : notFound ? <NotFound t={t} /> : <>
         <Hero t={t} lang={lang} />
 
         <Section id="about" index={1} title={t.about.title}>
+          {/* dos mitades como en Proyectos: texto a la izquierda; cifras e idiomas donde empieza la segunda tarjeta */}
           <div className="about">
-            <div>
+            <div className="about-text">
               <p className="lead">{t.about.text}</p>
-              <ul className="chips">{t.about.traits.map(x => <li key={x}>{x}</li>)}</ul>
               <p className="muted">{t.about.hobbies}</p>
             </div>
-            <div className="side">
+            <div className="about-facts">
               <div className="stats">
                 {t.about.stats.map(s => <div key={s.label} className="card stat"><strong>{s.value}</strong><span>{s.label}</span></div>)}
               </div>
-              <div className="card langs">
-                {t.about.languages.map(l => <p key={l.name} className="lang-row"><strong>{l.name}</strong><span className="muted mono small">{l.level}</span></p>)}
+              <div className="side">
+                <div className="card langs">
+                  {t.about.languages.map(l => <p key={l.name} className="lang-row"><strong>{l.name}</strong><span className="muted mono small">{l.level}</span></p>)}
+                </div>
+                <ul className="chips">{t.about.traits.map(x => <li key={x}>{x}</li>)}</ul>
               </div>
             </div>
           </div>
